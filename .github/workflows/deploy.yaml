@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build site
-        run: ./build
+        run: ./build.sh
       - name: Rename `_site` to `site`
         run: mv ./_site ./site
       - name: Push `site` to `gh-pages` branch
