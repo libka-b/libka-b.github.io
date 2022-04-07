@@ -9,13 +9,13 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build site
         run: docker run -t --rm -v `pwd`:/app:Z -v `pwd`/_site:/_site:Z -w /app -p 4000:4000 starefossen/github-pages jekyll build
-      - name: Rename `_site` to `site`
-        run: mv ./_site ./site
-      - name: Push `site` to `gh-pages` branch
+      - name: Rename `_site` to `docs`
+        run: mv ./_site ./docs
+      - name: Push `docs` to `gh-pages` branch
         run: |
           git config --global user.name 'Libor Bakajsa'
           git config --global user.email 'lbakajsa@gmail.com'
           git checkout -b gh-pages
-          git add ./site
+          git add ./docs
           git commit -m "Regenerate site"
           git push origin gh-pages:gh-pages --force
