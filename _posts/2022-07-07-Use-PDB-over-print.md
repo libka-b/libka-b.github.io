@@ -555,7 +555,7 @@ plain pdb.
 It can be installed simply by `pip install ipdb` and invoked similarly as pdb,
 for example `python -m ipdb navigating.py`.
 
-![iPDB](static/ipdb.png)
+![iPDB](/assets/img/ipdb.png)
 
 I personally dislike it for its verbosity, especially when it comes to inspecting the stack.
 Let's see example:
@@ -580,7 +580,7 @@ ipdb> w
 
 See the result here
 
-![iPDB stack](static/stack.png)
+![iPDB stack](/assets/img/stack.png)
 
 But I believe iPDB can be useful especially when it comes to learning with debugger.
 
