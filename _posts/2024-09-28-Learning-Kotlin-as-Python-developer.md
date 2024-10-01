@@ -6,7 +6,7 @@ After 7 years working as a Python developer, I started a new job working primari
 
 ## Basics
 
-For a Python developer, first things you'll notice working in Kotlin is that you have to use (mostly) brackets when defining functions. I actually like this as indentation might sometimes be confusing. Also when someone starts working on existing codebase and have IDE preset to use tabs instead of space, this will create inconsistencies, but overall this is not a big deal. I say you have to use brackets mostly, as there is expression body syntax that looks like this:
+For a Python developer, first things you'll notice working in Kotlin is that you have to use (mostly) brackets when defining functions. I actually like this as indentation might sometimes be confusing. Also, when someone starts working on existing codebase and have IDE preset to use tabs instead of space, this will create inconsistencies, but overall this is not a big deal. I say you have to use brackets mostly, as there is expression body syntax that looks like this:
 
 ```kotlin
 fun sum(a: Int, b: Int) = a + b
@@ -21,6 +21,23 @@ data class Student(val name: String, var address: String)
 ```
 
 Taking into account the mutability of parameters mentioned above, we can initialize the `Student` class and if we make the mutable variant of it, we can always mutate only the students address.
+
+Having an option of adding a default value of a parameter is a cool feature in Python and guess what? Kotlin has that too.
+
+One thing I am glad Kotlin doesn't have is Python's `**kwargs`. I spent a lot of time arguing with my colleagues not to use this feature in the production libraries as it only obscures whatever parameters are being passed (especially when it's being passed down through several function calls). If you're using typing, you probably want your code to be readable, right?
+
+On the typing notion, when a return type in Python is nullable, we can annotate it as `Optional[T]`. In Kotlin, nullable type would be `T?`, where the `?` denotes nullability. The cool thing is Kotlin's Elvis operator `?:` (apparently it resembles Elvis' hair when you tilt your head) - imagine you have a function that accepts list of integers and returns sum of it or null if it's empty. You might be interested only in the integer values and throw error if the return value is null. Here's an example of how you would do that using the Elvis operator:
+
+```kotlin
+fun sumNonEmpty(integers: List<Int>): Int? = if (integers.isEmpty()) { null } else integers.sum()
+
+val listOfIntegers: List<Int> = ...
+val sum = sumNonEmpty(listOfIntegers) ?: error("Cannot sum empty list.")
+```
+
+As you might have noticed in the previous examples, Kotlin, unlike Python, is typed and it is typed strictly. I was advocating on using the type annotations in production Python codebases to make it clear what's being used where, but the types weren't strictly enforced in Python and so by using Kotlin I still learnt some new things about the types. For instance, that my previous [blog post](https://libka-b.github.io/2022/04/07/Mypy-generics-and-subtypes.html) is completely wrong.
+
+## Lambdas
 
 Often in Kotlin you can see function calls like this:
 
@@ -51,8 +68,6 @@ val squaredEvenNumbers = (1 until 10)
 ```
 
 Which I find pretty straightforward. On top of that, Kotlin's lambdas aren't limited to be just a single expression. The lambda's body can span multiple lines and the last line is its return value (you don't type explicit `return` in lambda).
-
-As you might have noticed in the previous examples, Kotlin, unlike Python, is typed and it is typed strictly. I was advocating on using the type annotations in production Python codebases to make it clear what's being used where, but the types weren't strictly enforced in Python and so by using Kotlin I still learnt some new things about the types. For instance, that my previous [blog post](https://libka-b.github.io/2022/04/07/Mypy-generics-and-subtypes.html) is completely wrong.
 
 ## Extension functions and receivers
 
