@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16x16.png">
+        <link rel="manifest" href="/assets/img/site.webmanifest">
+        <link rel="mask-icon" href="/assets/img/safari-pinned-tab.svg" color="#5bbad5">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="theme-color" content="#ffffff">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/assets/css/styles.css">
+        <link rel="stylesheet" href="/assets/css/code-highlight.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+        <title>Using Javacript To Avoid Clicking</title>
+    </head>
+    <body>
+        <h1 style="text-align:center;">Libor's blog</h1>
+        <nav>
+    <table>
+        <ul class="nav">
+            <li style="float:left;text-align:left;">
+                <a href="/">Blog</a>
+            </li>
+            <li style="float:right;text-align:right;">
+                <a href="/about.html">About</a>
+            </li>
+        </ul>
+    </table>
+</nav>
+
+        <br>
+        <hr>
+
+        <h1>Using Javacript To Avoid Clicking</h1>
+
+        <p>Recently, I had to check hundreds of checkboxes to proceed with my work and the website didn’t expose any API that I could leverage to make my life easier. Being a proper lazy developer who doesn’t want to click hundreds of times using mouse and potentially missing some of the buttons, I got an idea involving Javascript and developer console.</p>
+
+<h3 id="developer-console">Developer console</h3>
+
+<p>Every modern browser comes with a development console and let’s you inspect the contents of a webpage, run some javascript, inspect network traffic, etc… It can probably do things I’ve never heard of, but even for web developer newbies such as myself it’s pretty useful tool.</p>
+
+<p>Since I am using Firefox, everything related to the development console will be referred to with regard to Firefox. I suppose it works similarly in other browsers too. The Firefox’ <a href="https://firefox-source-docs.mozilla.org/devtools-user/index.html">official documentation</a> can give good idea.</p>
+
+<h3 id="javascript">Javascript</h3>
+
+<p>Javascript was created to execute code from a webpage on your local device. It’s power lies especially at manipulating the webpage content based on users’ action. There’s long history to Javascript and I know close to nothing about it, so I’ll just refer to some <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">documentation</a>.</p>
+
+<h3 id="putting-it-all-together">Putting it all together</h3>
+
+<p>Let’s assume we have a website that has some <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox">checkbox</a> like this:</p>
+
+<p><input type="checkbox" value="test" /></p>
+
+<p>And our task is to check the box programmatically.</p>
+
+<p>First let’s open the development console using F12. In the ‘inspector’ section, after expanding couple of the first enclosing tags, we can see something like this:</p>
+
+<p><img src="/assets/img/dev-console.png" alt="console" /></p>
+
+<p>Alright, so the checkbox has value of <code class="language-plaintext highlighter-rouge">test</code>. We can use Javascript’s <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll"><code class="language-plaintext highlighter-rouge">querySelectorAll</code></a> to select all elements matching our selector. In our case we can run this:</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">document</span><span class="p">.</span><span class="nx">querySelectorAll</span><span class="p">(</span><span class="dl">'</span><span class="s1">input[type="checkbox"]</span><span class="dl">'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>To run it, switch tab in your console to ‘Console’, paste the above code and hit enter. You should see something like this</p>
+
+<p><img src="/assets/img/query-selector.png" alt="query" /></p>
+
+<p>When you click the input on the next line, it actually points you to the checkbox in the html code in the ‘Inspector’ tab.</p>
+
+<p>Now to check the checkbox, we need to do moore than just finding it. According to the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#using_checkbox_inputs">documentation</a>, the box is checked when its property <code class="language-plaintext highlighter-rouge">checked</code> is true. Let’s code that:</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">document</span><span class="p">.</span><span class="nx">querySelectorAll</span><span class="p">(</span><span class="dl">'</span><span class="s1">input[type="checkbox"]</span><span class="dl">'</span><span class="p">).</span><span class="nx">forEach</span><span class="p">(</span><span class="nx">checkbox</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="nx">checkbox</span><span class="p">.</span><span class="nx">checked</span> <span class="o">=</span> <span class="kc">true</span><span class="p">})</span>
+</code></pre></div></div>
+
+<p>Run this in this console and also check visually that now the checkbox really is checked!</p>
+
+<p>To make sure we select only the checkboxes we really want, we can further refine the query to include other attributes too. For example, since our checkbox has value equal to test, we can (and should) include that too:</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">document</span><span class="p">.</span><span class="nx">querySelectorAll</span><span class="p">(</span><span class="dl">'</span><span class="s1">input[type="checkbox"][value="test"]</span><span class="dl">'</span><span class="p">).</span><span class="nx">forEach</span><span class="p">(</span><span class="nx">checkbox</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="nx">checkbox</span><span class="p">.</span><span class="nx">checked</span> <span class="o">=</span> <span class="kc">true</span><span class="p">})</span>
+</code></pre></div></div>
+
+<p>This was fun. Instead of performing gazillions of boring mouse clicks I learnt a bit of a Javascript and mainly had fun doing that. This follows the notoriously famous “Automate the boring stuff” or “When you have to do something twice, take a look to see if that can be automated. That extra time can pay off as there’s a good chance you’ll have to do it yet again.”.</p>
+
+
+        <br>
+        <br>
+        <br>
+        
+        <p class="footer">Built with <a href="https://jekyllrb.com/">Jekyll</a></p>
+    </body>
+</html>
