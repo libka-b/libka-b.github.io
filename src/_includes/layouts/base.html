@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+    {% include "partials/head.html" %}
+    <body>
+        {% include "partials/navigation.html" %}
+        <hr>
+        <h1>{{ title }}</h1>
+        <main tabindex="-1" id="main-content">
+        {% block content %}
+        {% endblock %}
+        </main>
+        {% include "partials/footer.html" %}
+    </body>
+</html>

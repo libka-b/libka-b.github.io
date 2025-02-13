@@ -1,0 +1,17 @@
+{
+  "name": "blogisek",
+  "version": "1.0.0",
+  "description": "My personal blog using Eleventy",
+  "main": ".eleventy.js",
+  "type": "module",
+  "scripts": {
+    "start": "npx eleventy --serve"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0"
+  }
+}

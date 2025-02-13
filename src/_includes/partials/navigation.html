@@ -1,0 +1,10 @@
+<h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        {% for item in navigation.items %}
+        <li>
+            <a href="{{ item.url }}">{{ item.name }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>

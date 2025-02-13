@@ -7,8 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Build image
+        run: docker build -t eleventy-blog-image .
       - name: Build site
-        run: docker run -t --rm -v `pwd`:/app:Z -v `pwd`/_site:/_site:Z -w /app -p 4000:4000 starefossen/github-pages jekyll build
+        run: docker run -t --rm -v `pwd`/_site:/app/_site:Z -w /app eleventy-blog-image output=_site
       - name: Rename `_site` to `docs`
         run: mv ./_site ./docs
       - name: Push `docs` to `gh-pages` branch

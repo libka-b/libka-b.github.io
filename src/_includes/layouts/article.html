@@ -1,0 +1,5 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<p class="published">Published on {{ page.date | toDate }}</p>
+{{ content | safe }}
+{% endblock %}
