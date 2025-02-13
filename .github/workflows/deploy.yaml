@@ -10,7 +10,7 @@ jobs:
       - name: Build image
         run: docker build -t eleventy-blog-image .
       - name: Build site
-        run: docker run -t --rm -v `pwd`/_site:/app/_site:Z -w /app eleventy-blog-image output=_site
+        run: docker run -t --rm -v `pwd`/_site:/app/_site:Z -w /app eleventy-blog-image --output=_site
       - name: Rename `_site` to `docs`
         run: mv ./_site ./docs
       - name: Push `docs` to `gh-pages` branch
