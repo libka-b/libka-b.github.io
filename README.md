@@ -13,7 +13,7 @@ docker build -t eleventy .
 Run:
 
 ```
-docker run --rm -p 8080:8080 eleventy --serve
+docker run -it --rm -p 8080:8080 eleventy --serve
 ```
 
 Build and output to the `_site` directory:
