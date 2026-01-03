@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/about/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x161" href="/images/about/favicon-16x16.png">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/prism-one-light.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+    <title>Learning Kotlin as Python developer</title>
+</head>
+    <body>
+        <h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        
+        <li>
+            <a href="/">Blog</a>
+        </li>
+        
+        <li>
+            <a href="/about">About</a>
+        </li>
+        
+    </ul>
+</nav>
+        <hr>
+        <h1>Learning Kotlin as Python developer</h1>
+        <main tabindex="-1" id="main-content">
+        
+<p class="published">Published on Sep 28, 2024</p>
+<p>After 7 years working as a Python developer, I started a new job working primarily with Kotlin. Here, I'll share the experience and some ways the two languages differ. Let's take a look.</p>
+<h2>Basics</h2>
+<p>For a Python developer, first things you'll notice working in Kotlin is that you have to use (mostly) brackets when defining functions. I actually like this as indentation might sometimes be confusing. Also, when someone starts working on existing codebase and have IDE preset to use tabs instead of space, this will create inconsistencies, but overall this is not a big deal. I say you have to use brackets mostly, as there is expression body syntax that looks like this:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">sum</span><span class="token punctuation">(</span>a<span class="token operator">:</span> Int<span class="token punctuation">,</span> b<span class="token operator">:</span> Int<span class="token punctuation">)</span> <span class="token operator">=</span> a <span class="token operator">+</span> b</code></pre>
+<p>Interesting part of syntax is that you can declare variables in two ways, using <code>val</code> or <code>var</code> keywords. The former creates immutable variable, such that you can't change it after declaration. The latter makes it mutable but most of the time working on large codebases the variables can be just immutable.</p>
+<p>In Python, there's this <code>@dataclass</code> decorator marking class as data class and it would generate the constructor and <code>__eq__</code> and <code>__hash__</code> functions. Kotlin has similar concept:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">data</span> <span class="token keyword">class</span> <span class="token function">Student</span><span class="token punctuation">(</span><span class="token keyword">val</span> name<span class="token operator">:</span> String<span class="token punctuation">,</span> <span class="token keyword">var</span> address<span class="token operator">:</span> String<span class="token punctuation">)</span></code></pre>
+<p>Taking into account the mutability of parameters mentioned above, we can initialize the <code>Student</code> class and if we make the mutable variant of it, we can always mutate only the students address.</p>
+<p>Having an option of adding a default value of a parameter is a cool feature in Python and guess what? Kotlin has that too.</p>
+<p>One thing I am glad Kotlin doesn't have is Python's <code>**kwargs</code>. I spent a lot of time arguing with my colleagues not to use this feature in the production libraries as it only obscures whatever parameters are being passed (especially when it's being passed down through several function calls). If you're using typing, you probably want your code to be readable, right?</p>
+<p>On the typing notion, when a return type in Python is nullable, we can annotate it as <code>Optional[T]</code>. In Kotlin, nullable type would be <code>T?</code>, where the <code>?</code> denotes nullability. The cool thing is Kotlin's Elvis operator <code>?:</code> (apparently it resembles Elvis' hair when you tilt your head) - imagine you have a function that accepts list of integers and returns sum of it or null if it's empty. You might be interested only in the integer values and throw error if the return value is null. Here's an example of how you would do that using the Elvis operator:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">sumNonEmpty</span><span class="token punctuation">(</span>integers<span class="token operator">:</span> List<span class="token operator">&lt;</span>Int<span class="token operator">></span><span class="token punctuation">)</span><span class="token operator">:</span> Int<span class="token operator">?</span> <span class="token operator">=</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>integers<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token keyword">null</span> <span class="token punctuation">}</span> <span class="token keyword">else</span> integers<span class="token punctuation">.</span><span class="token function">sum</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token keyword">val</span> listOfIntegers<span class="token operator">:</span> List<span class="token operator">&lt;</span>Int<span class="token operator">></span> <span class="token operator">=</span> <span class="token operator">..</span><span class="token punctuation">.</span>
+<span class="token keyword">val</span> sum <span class="token operator">=</span> <span class="token function">sumNonEmpty</span><span class="token punctuation">(</span>listOfIntegers<span class="token punctuation">)</span> <span class="token operator">?:</span> <span class="token function">error</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"Cannot sum empty list."</span></span><span class="token punctuation">)</span></code></pre>
+<p>As you might have noticed in the previous examples, Kotlin, unlike Python, is typed and it is typed strictly. I was advocating on using the type annotations in production Python codebases to make it clear what's being used where, but the types weren't strictly enforced in Python and so by using Kotlin I still learnt some new things about the types. For instance, that my previous <a href="https://libka-b.github.io/2022/04/07/Mypy-generics-and-subtypes.html">blog post</a> is completely wrong.</p>
+<h2>Lambdas</h2>
+<p>Often in Kotlin you can see function calls like this:</p>
+<pre class="language-kotlin"><code class="language-kotlin">intCollection<span class="token punctuation">.</span><span class="token function">map</span> <span class="token punctuation">{</span> it <span class="token operator">+</span> <span class="token number">1</span> <span class="token punctuation">}</span></code></pre>
+<p>and at first glance I was puzzled what's going on in here - Why are there no braces <code>()</code> following the <code>map</code> call? What is he <code>it</code> variable? Looking at the <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/map.html">definition</a> of map function, you can see it accepts a single parameter - a lambda that transforms every element of the iterable. Using the full syntax, the call would look like this:</p>
+<pre class="language-kotlin"><code class="language-kotlin">intCollection<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">{</span> it <span class="token operator">-></span> it <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+<p>But Kotlin developers added some syntax sugar. If the last parameter in the argument list is lambda, the function can be called with the lambda being outside of the braced parameters. When there are no other parameters than the lambda, the braces can be omitted completely. And last, if the lambda works with a single parameter, it's implicit name is <code>it</code>. All these decisions make the language very concise.</p>
+<p>In Python, very often we would often use list (or set, dict, ...) comprehensions to create and transform data. For example:</p>
+<pre class="language-python"><code class="language-python">squaredEvenNumbers <span class="token operator">=</span> <span class="token punctuation">[</span>i <span class="token operator">*</span> i <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">if</span> i <span class="token operator">%</span> <span class="token number">2</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">]</span></code></pre>
+<p>This is cool but it might become very quickly very unreadable, especially when doing comprehension on multiple collections. Furthermore, for people not familiar with the syntax, the order of things may seem odd. In Kotlin we would achieve the same thing like this:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">val</span> squaredEvenNumbers <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">1</span> until <span class="token number">10</span><span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">filter</span> <span class="token punctuation">{</span> it <span class="token operator">%</span> <span class="token number">2</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">}</span>
+    <span class="token punctuation">.</span><span class="token function">map</span> <span class="token punctuation">{</span> it <span class="token operator">*</span> it <span class="token punctuation">}</span></code></pre>
+<p>Which I find pretty straightforward. On top of that, Kotlin's lambdas aren't limited to be just a single expression. The lambda's body can span multiple lines and the last line is its return value (you don't type explicit <code>return</code> in lambda).</p>
+<h2>Extension functions and receivers</h2>
+<p>These were some cool things, but Kotlin has more features. Extension functions are one of them. When you don't like class' API (for example it's 3rd-party class that you have no control over), you can extend it to better suit your needs. Consider you import a <code>Point</code> class and you want to compute the distance from another point. You can do this:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">data</span> <span class="token keyword">class</span> <span class="token function">Point</span><span class="token punctuation">(</span><span class="token keyword">val</span> x<span class="token operator">:</span> Int<span class="token punctuation">,</span> <span class="token keyword">val</span> y<span class="token operator">:</span> Int<span class="token punctuation">)</span>
+
+<span class="token keyword">fun</span> Point<span class="token punctuation">.</span><span class="token function">distance</span><span class="token punctuation">(</span>other<span class="token operator">:</span> Point<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token function">sqrt</span><span class="token punctuation">(</span><span class="token function">sqr</span><span class="token punctuation">(</span>x <span class="token operator">-</span> other<span class="token punctuation">.</span>x<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token function">sqr</span><span class="token punctuation">(</span>y <span class="token operator">-</span> other<span class="token punctuation">.</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
+<p>But since lambdas are used everywhere, you can also have a lambda with context like this:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">foo</span><span class="token punctuation">(</span>Point<span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-></span> Double<span class="token punctuation">)</span></code></pre>
+<p>Now when passing the lambda, its <code>this</code> variable holds reference to its receiver, in this case <code>Point</code>. You can then call the <code>foo</code> function like this:</p>
+<pre class="language-kotlin"><code class="language-kotlin">foo <span class="token punctuation">{</span> <span class="token function">sqrt</span><span class="token punctuation">(</span><span class="token function">sqr</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>x<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token function">sqr</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>y<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span></code></pre>
+<p>I've seen some codebases where this feature got so overused that things quickly got out of hand and it was nearly impossible to follow the code as there would be different receivers all over the place.</p>
+<h2>Generics</h2>
+<p>As most of the languages, Kotlin supports generics making code reusable. I found this amazing <a href="https://typealias.com/start/kotlin-generics/">blog post</a> explaining generics in general and in Kotlin. Which led me to greater understanding of the subtyping and as I mentioned earlier, why my previous blog post is wrong.</p>
+<p>One thing I must call out is the weird syntax when you want to narrow generic type to multiple interfaces:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> <span class="token function">foo</span><span class="token punctuation">(</span>a<span class="token operator">:</span> T<span class="token punctuation">)</span><span class="token operator">:</span> Int
+    <span class="token keyword">where</span> T <span class="token operator">:</span> A<span class="token punctuation">,</span> T <span class="token operator">:</span> B</code></pre>
+<p>I haven't needed this very often though, so maybe it's not such a problem.</p>
+<h2>Summary</h2>
+<p>This post covers most of the things I wanted to share about Kotlin. It's not supposed to be a full feature list. Kotlin is a full blown language and it's a joy to work with, so is Python though and the way I see it, Kotlin is yet another tool in my shed.</p>
+<p>If you want to learn Kotlin, I would recommend <a href="https://www.manning.com/books/kotlin-in-action">Kotlin in Action</a> from the creators of the language. It covers all the topics in depth (although from Java's perspective) providing the resources necessary to master the language.</p>
+
+
+        </main>
+        <div class="footer">
+    <p>Built with <a href="https://www.11ty.dev">Eleventy</a></p>
+    <a href="https://github.com/libka-b" target="_blank">
+        <img src="/images/about/github-mark.png" class="github-logo">
+    </a>
+    <a href="mailto:lbakajsa@gmail.com">Contact Me</a>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/about/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x161" href="/images/about/favicon-16x16.png">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/prism-one-light.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+    <title>Crafting Interpreters in Kotlin</title>
+</head>
+    <body>
+        <h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        
+        <li>
+            <a href="/">Blog</a>
+        </li>
+        
+        <li>
+            <a href="/about">About</a>
+        </li>
+        
+    </ul>
+</nav>
+        <hr>
+        <h1>Crafting Interpreters in Kotlin</h1>
+        <main tabindex="-1" id="main-content">
+        
+<p class="published">Published on Mar 13, 2025</p>
+<p>Working as a software engineer, I was surprised how often there comes a need to interpret something and the code for that is a mini interpreter. But it makes sense, teams often work with data and need to evaluate them somehow and since the data is very specific to their domain, they need to use something very tailored. Last time this happened, I opened my copy of <a href="https://craftinginterpreters.com/">Crafting Interpreters</a> this time for the third time and using third different language and determined that this time I would finally see it through. And this time I did and there were several fascinating concepts I learnt and want to highlight some of those.</p>
+<p>First of all, I want to express my gratitude to Robert Nystrom, author of the book. He really made this topic much more accessible without having to study it in university or reading massive books full of specialized concepts and university degree math.</p>
+<p>Throughout the book, there were many places where I was like &quot;wow that's cool&quot; and if you're interested it's best to get the book. There were some, however, that I want to mention here as either they got me realize something that I didn't understand too much or I used them in my other projects.</p>
+<p>Namely, I want to talk about <a href="https://en.wikipedia.org/wiki/Visitor_pattern">visitor pattern</a>, exception as a mean to unwind stack, <a href="https://en.wikipedia.org/wiki/Foreign_function_interface">foreign function interface</a> and scopes. Let's do it!</p>
+<h3>Visitor pattern</h3>
+<p>Visitor pattern is extremely useful design pattern but I never had chance to implement it. It comes in handy in situations where you have self referencing heterogenous structures. Sounds complicated, but consider this example:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">sealed</span> <span class="token keyword">interface</span> Expression
+
+<span class="token keyword">data</span> <span class="token keyword">class</span> <span class="token function">Binary</span><span class="token punctuation">(</span><span class="token keyword">val</span> left<span class="token operator">:</span> Expression<span class="token punctuation">,</span> <span class="token keyword">val</span> right Expression<span class="token punctuation">,</span> <span class="token keyword">val</span> <span class="token keyword">operator</span><span class="token operator">:</span> Operator<span class="token punctuation">)</span> <span class="token operator">:</span> Expression
+
+<span class="token keyword">data</span> <span class="token keyword">class</span> <span class="token function">Literal</span><span class="token punctuation">(</span><span class="token keyword">val</span> value<span class="token operator">:</span> Any<span class="token punctuation">)</span> <span class="token operator">:</span> Expression</code></pre>
+<p>Now, the above example is quite simple but you can see how binary can nest itself deep if needed and if you start adding other operators such as logical operator, data retrievers etc... and handling the code naively, you'll end up doing something like this:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">evaluate</span><span class="token punctuation">(</span>expression<span class="token operator">:</span> Expression<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">when</span> <span class="token punctuation">(</span>expression<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">is</span> Binary <span class="token operator">-></span> expression<span class="token punctuation">.</span><span class="token function">operator</span><span class="token punctuation">(</span><span class="token function">evaluate</span><span class="token punctuation">(</span>expression<span class="token punctuation">.</span>left<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">evaluate</span><span class="token punctuation">(</span>expression<span class="token punctuation">.</span>right<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">is</span> Literal <span class="token operator">-></span> expression<span class="token punctuation">.</span>value
+<span class="token punctuation">}</span></code></pre>
+<p>Adding more operators might quickly get out of hand, not only will it become hardly readable, it also performs poorly. The solution to that is visitor pattern:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">interface</span> Visitor<span class="token operator">&lt;</span>T<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">fun</span> <span class="token function">visitBinary</span><span class="token punctuation">(</span>binary<span class="token operator">:</span> Expression<span class="token punctuation">)</span><span class="token operator">:</span> T
+    <span class="token keyword">fun</span> <span class="token function">visitLiteral</span><span class="token punctuation">(</span>literal<span class="token operator">:</span> Expression<span class="token punctuation">)</span><span class="token operator">:</span> T
+<span class="token punctuation">}</span>
+
+<span class="token keyword">sealed</span> <span class="token keyword">interface</span> Expression <span class="token punctuation">{</span>
+    <span class="token keyword">fun</span> <span class="token function">acceptVisitor</span><span class="token punctuation">(</span>visitor<span class="token operator">:</span> Visitor<span class="token punctuation">)</span><span class="token operator">:</span> Any
+<span class="token punctuation">}</span>
+
+<span class="token keyword">data</span> <span class="token keyword">class</span> <span class="token function">Binary</span><span class="token punctuation">(</span><span class="token keyword">val</span> left<span class="token operator">:</span> Expression<span class="token punctuation">,</span> <span class="token keyword">val</span> right Expression<span class="token punctuation">,</span> <span class="token keyword">val</span> <span class="token keyword">operator</span><span class="token operator">:</span> Operator<span class="token punctuation">)</span> <span class="token operator">:</span> Expression <span class="token punctuation">{</span>
+    <span class="token keyword">fun</span> <span class="token function">acceptVisitor</span><span class="token punctuation">(</span>visitor<span class="token operator">:</span> Visitor<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token function">visitBinary</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">data</span> <span class="token keyword">class</span> <span class="token function">Literal</span><span class="token punctuation">(</span><span class="token keyword">val</span> value<span class="token operator">:</span> Any<span class="token punctuation">)</span> <span class="token operator">:</span> Expression <span class="token punctuation">{</span>
+    <span class="token keyword">fun</span> <span class="token function">acceptVisitorLiteral</span><span class="token punctuation">(</span>visitor<span class="token operator">:</span> Visitor<span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token function">visitLiteral</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> EvaluatingVisitor <span class="token operator">:</span> Visitor<span class="token operator">&lt;</span>Boolean<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">fun</span> <span class="token function">evaluate</span><span class="token punctuation">(</span>expression<span class="token operator">:</span> Expression<span class="token punctuation">)</span> <span class="token operator">=</span> expression<span class="token punctuation">.</span><span class="token function">acceptVisitor</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">fun</span> <span class="token function">visitBinary</span><span class="token punctuation">(</span>binary<span class="token operator">:</span> Expression<span class="token punctuation">)</span> <span class="token operator">=</span> binary<span class="token punctuation">.</span><span class="token function">operator</span><span class="token punctuation">(</span>binary<span class="token punctuation">.</span>left<span class="token punctuation">.</span><span class="token function">acceptVisitor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> binary<span class="token punctuation">.</span>right<span class="token punctuation">.</span><span class="token function">acceptVisitor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">fun</span> <span class="token function">visitLiteral</span><span class="token punctuation">(</span>literal<span class="token operator">:</span> Expression<span class="token punctuation">)</span> <span class="token operator">=</span> literal<span class="token punctuation">.</span>value
+<span class="token punctuation">}</span></code></pre>
+<p>Now, at first glance this is much more code than in the first case but there are many benefits:</p>
+<ul>
+<li>Data and logic are decoupled and as simple as possible. This might not look right in these simple examples but when your <code>Expression</code> interface is implemented by 20 classes the difference will be huge. The logic is also separated into individual methods instead of having a single function that calls itself recursively.</li>
+<li>Another problem with the first approach is performance. Every time we evaluate an expression, we need to figure out its type and execute the corresponding code. In visitor this is elegantly solved by calling <code>acceptVisitor</code> on each non-terminating expression. This is not much of a win in interpreted languages such as Python, where it become just a map lookup but in compiled languages this is a real deal.</li>
+<li>Visitor pattern empowers us to implement additional logic on our data structure. For example, did you know how most of the linters are implemented? That's right. Visitor pattern.</li>
+</ul>
+<h3>Exceptions as means to unwind stack</h3>
+<p>In chapter implementing functions, I was curious about how <code>return</code>s are implemented. Having single return at the end of a function is not a big deal but what about returns somewhere in the middle of a function? Consider this function:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">foo</span><span class="token punctuation">(</span>a<span class="token operator">:</span> Int<span class="token punctuation">)</span><span class="token operator">:</span> Boolean <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>a <span class="token operator">&lt;</span> <span class="token number">5</span><span class="token punctuation">)</span> <span class="token keyword">return</span> <span class="token boolean">false</span>
+    <span class="token keyword">return</span> <span class="token boolean">true</span>
+<span class="token punctuation">}</span></code></pre>
+<p>It's not so complicated to implement the last return, simply execute it and jump out of the block. But what about the return right after the <code>if</code>? At first, I was thinking you need some kind of go-to and I was kind of right. The way it's implemented is by throwing exception that wraps the return value (if any). This led me to realization that when implementing iterator in Python, you throw <code>StopIteration</code> exception to signal the interpreter that there's no more values to iterate. I now wonder if interpreters are full of exceptions like that to signal break, return and what not.</p>
+<h3>Foreign Function Interface (FFI)</h3>
+<p>I'll stay a bit longer with the functions. It makes sense that some functions in a language are implemented in the language implementing the language. Looks like some kind of recursion here. Ok, consider you have an interpreter of language <code>A</code> written in language <code>B</code>. It makes sense, that some functions accessible in the interpreted language (<code>A</code>) are written using the language in which the interpreter is written (<code>B</code>). What struck me though, was that functions in interpreters actually have somme kind of interface which is used to run a function. This interface can also be leveraged to write a function in the interpreter's language.</p>
+<p>This way, I finally understood what it means when people were talking about C-bindings for Python. You simply write a function in C and it runs much faster than the same function written in Python (unless you do some optimization hacks, like people comparing plain Fibonacci in C vs Fibonacci in Python with cache on the intermediate values claiming that Python is faster).</p>
+<p>I definitely came across the FFI mentions in the past I just never devoted much time trying to read or understand it. Implementing it myself was the best way to actually do it.</p>
+<h3>Scopes</h3>
+<p>Having lot of experience with Python, I did have a hunch that scopes are basically just maps holding values of variables. However, implementing it myself, I experienced all the nuances that it has to deal with and that a naive approach would quickly break. There's a fair share of complexity and considerations to take and I would recommend anyone interested in interpreters to read the book to see how it's done properly (although Robert took some decisions that I would disagree with but it's up to everyone's taste).</p>
+<h2>Conclusion</h2>
+<p>Crafting interpreters is amazing book for language hobbyists like myself. There are many concepts to learn from and it's fun to implement your own language from scratch with zero third party dependencies.</p>
+<p>If you want to take a look at my implementation, it can be found <a href="https://github.com/libka-b/klox">here</a>.</p>
+
+
+        </main>
+        <div class="footer">
+    <p>Built with <a href="https://www.11ty.dev">Eleventy</a></p>
+    <a href="https://github.com/libka-b" target="_blank">
+        <img src="/images/about/github-mark.png" class="github-logo">
+    </a>
+    <a href="mailto:lbakajsa@gmail.com">Contact Me</a>
+</div>
+
+    </body>
+</html>

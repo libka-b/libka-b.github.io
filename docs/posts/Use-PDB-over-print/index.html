@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/about/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x161" href="/images/about/favicon-16x16.png">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/prism-one-light.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+    <title>Use PDB over print</title>
+</head>
+    <body>
+        <h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        
+        <li>
+            <a href="/">Blog</a>
+        </li>
+        
+        <li>
+            <a href="/about">About</a>
+        </li>
+        
+    </ul>
+</nav>
+        <hr>
+        <h1>Use PDB over print</h1>
+        <main tabindex="-1" id="main-content">
+        
+<p class="published">Published on Jul 07, 2022</p>
+<p>When I started coding in python, whenever my script crashed with some traceback,
+I would start adding <code>print</code>s here and there and would re-run the script as many
+times as needed to figure out what's wrong. Now, this approach works, but takes
+a lot of time and may be quite frustrating (Where should I put prints? What should
+I print?).</p>
+<p>Here, I would like to show a different approach using python's built-in debugger
+(and some alternatives). This article should serve as a guide mainly to PDB, but
+also to debugging in general.</p>
+<h2>Simple example</h2>
+<p>Imagine you have a simple script that just requests some URL and tries to convert
+the response to JSON, like this</p>
+<pre class="language-python"><code class="language-python"><span class="token comment"># example.py</span>
+<span class="token keyword">import</span> requests
+
+response <span class="token operator">=</span> requests<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"https://example.com"</span><span class="token punctuation">)</span>
+json_response <span class="token operator">=</span> response<span class="token punctuation">.</span>json<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p>When you run this script, it will fail with a traceback similar to this one:</p>
+<pre><code>Traceback (most recent call last):
+  File &quot;/home/libor/venv/lib/site-packages/requests/models.py&quot;, line 971, in json
+    return complexjson.loads(self.text, **kwargs)
+  File &quot;/home/libor/venv/lib/json/__init__.py&quot;, line 346, in loads
+    return _default_decoder.decode(s)
+  File &quot;/home/libor/venv/lib/json/decoder.py&quot;, line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File &quot;/home/libor/venv/lib/json/decoder.py&quot;, line 355, in raw_decode
+    raise JSONDecodeError(&quot;Expecting value&quot;, s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File &quot;/home/libor/example.py&quot;, line 4, in &lt;module&gt;
+    json_response = response.json()
+  File &quot;/home/libor/venv/lib/site-packages/requests/models.py&quot;, line 975, in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+</code></pre>
+<p>The traceback is telling us there is something wrong with deserializing data to
+JSON. Common approach to get to know what went wrong would be to print pretty
+much everything relevant. The altered code might look like this</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">import</span> requests
+
+response <span class="token operator">=</span> requests<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"https://exmple.com"</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>response<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token builtin">dir</span><span class="token punctuation">(</span>response<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>response<span class="token punctuation">.</span>status_code<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>response<span class="token punctuation">.</span>text<span class="token punctuation">)</span>
+json_response <span class="token operator">=</span> response<span class="token punctuation">.</span>json<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p>That's a lot of prints to get an idea of what's wrong, and once you do, you have to
+remove them all (well, at least if this was production code).</p>
+<p>Let's try a different approach using PDB. To invoke our script in PDB, we don't have to
+install any extra libraries as it is a part of the standard libraries. To start debugging,
+run <code>python -m pdb example.py</code>, which in human language means &quot;invoke module pdb with argument my-script&quot;.
+Once you do so, you will see an output something like this</p>
+<pre><code>/home/libor/my-script(1)&lt;module&gt;()
+-&gt; import requests
+</code></pre>
+<p>The first line is telling us that we are on the first line of the script <code>example.py</code>
+and the second line shows the code on that line. There are now several ways on
+how to proceed, and the PDB's interactive shell also supports some help.
+We can see the help page by typing <code>h</code> (or <code>help</code>) and hitting enter. The help
+shows all the available commands and their shortcuts. The full reference to the
+commands can also be found in the <a href="https://docs.python.org/3/library/pdb.html">documentation</a>. Let's start with what
+I personally find the most useful - breakpoint. We can break the script execution
+at any line (before a crash occurs) and inspect our variables and code.</p>
+<p>When you check the PDB's help or the documentation, you can see there's <code>break</code>.
+The syntax of setting a breakpoint can be as simple as <code>b 4</code>, telling the
+debugger &quot;stop execution on line 4 of the current file&quot;. But it can be much more
+complicated (that's the true power of the breakpoints), more on that later.
+When you type that and hit enter, the PDB will in return tell you where the
+breakpoint is set.</p>
+<p>When the breakpoint's set, let's execute the script by running <code>c</code> (or <code>continue</code>).
+The execution will stop on line 4 just as we wanted and the PDB will output
+something like</p>
+<pre><code>&gt; /home/libor/example.py(4)&lt;module&gt;()
+-&gt; json_response = response.json()
+</code></pre>
+<p>At this moment we can hit <code>c</code> again and the program will fail. Or we can start
+inspecting what's wrong. Let's do the latter. To print a variable (or expression)
+simply do <code>p &lt;expression&gt;</code>. So in this case we could do</p>
+<pre><code>(Pdb) p response
+&lt;Response [200]&gt;
+(Pdb) pp dir(response)  # pp stands for prettyprint, dir is built-in function for showing all the methods and attributes on an object
+[...
+&lt;some attributes&gt;
+...]
+(Pdb) p response.status_code
+200
+(Pdb) p response.text
+&lt;some HTML string&gt;
+</code></pre>
+<p>After issuing the last command, we can see that the response is not a JSON but HTML,
+so that's what's wrong with the code. Now we can simply exit the debugger using
+<code>q</code> or <code>quit</code> and start fixing our code.</p>
+<p>I know, I know, this was a lot of work for a very trivial example, but when coding
+a real script / application / tool / whatever, all this may actually come in handy.
+Especially when reproducing the crash is not easy or it takes significant amount of
+time (you don't want to add print here and there, run the code, go grab a coffee
+to come back and finding out that the print printed something useless and you are back where
+you started).</p>
+<p>Until here I was mainly giving the examples of how to do some things. Let's dive
+deeper and properly now. I will start with all the ways of how to trigger the PDB,
+then going through the commands and their optional parameters. Finally, I will go
+through alternative debuggers, that can be often found in the Python world,
+and their pros and cons.</p>
+<h2>Invoking PDB</h2>
+<p>We have already seen one way of invoking the PDB. It's by running command
+<code>python -m pdb &lt;script&gt;</code>. This way works but often the debugged code is not a
+simple script and in case of larger project with multiple files, it's not very
+convenient to do it this way. The reason is simple, mostly you run the debugger
+because you want to set a breakpoint somewhere, and running the code this way
+would require you to type the full path to the file where you want to set up
+the breakpoint. There are simpler ways of doing it.</p>
+<p>From python version 3.7 there is a new built-in function called <code>breakpoint()</code>
+(guess what it does). Just for completion, before python 3.7 you would have to
+do <code>import pdb; pdb.set_trace()</code>. Once the executed code hits the line with
+this function call, it drops the execution to the PDB. This is very convenient
+way of debugging when you know approximate or exact place in your code where a
+crash occurs and you want to inspect under what condition it happens.</p>
+<p>There is also another way of invoking PDB. Let's say you are running your code
+from some <code>main()</code> function like this</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p>A simple alteration to the code will drop you to the debugger once there is an
+exception, allowing you to inspect stack and variables on it.</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">import</span> pdb
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        main<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">except</span> Exception <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+        pdb<span class="token punctuation">.</span>post_mortem<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p>These are the ways how to invoke the debugger. Let's look at the power the
+debugger gives us.</p>
+<h2>PDB commands</h2>
+<p>We have already seen some of the commands that can be issued to the debugger.
+When we run <code>help</code> inside the debugger, we can see all the available commands.</p>
+<h3>Navigation</h3>
+<p>First we will need commands for navigating in the code. We have already seen
+<code>c(ontinue)</code> which runs the code until it hits the next breakpoint. For executing
+only current line, we have <code>n(ext)</code> and if we want to step into a call there is
+<code>s(tep)</code>, if the call is nested, it will step into the inner most call, then the
+second inner most, etc... There is also <code>r(eturn)</code> that continues until it hits the
+return line (in case function is not returning, it will stop on the last line).</p>
+<p>Let's see these comands in action debugging a simple script</p>
+<pre class="language-python"><code class="language-python"><span class="token comment"># navigating.py</span>
+<span class="token keyword">def</span> <span class="token function">inc</span><span class="token punctuation">(</span>x<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">int</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span>  <span class="token comment"># just to make this function a bit longer</span>
+    x <span class="token operator">+=</span> <span class="token number">1</span>
+    <span class="token keyword">return</span> x
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    number <span class="token operator">=</span> inc<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span></code></pre>
+<p>Running <code>python -m pdb navigating.py</code> will drop us directly to the debugger with output like this</p>
+<pre><code>&gt; /home/libor/navigating.py(1)&lt;module&gt;()
+-&gt; def inc(x: int) -&gt; int:
+</code></pre>
+<p>Meaning that we are on the first line of the script being debugged. By issuing command <code>n</code>
+the execution moves on to the line 7 with <code>if __name__ == &quot;__main__&quot;:</code>, skipping the <code>inc</code>
+function. We can now simply hit enter which issues the last command moving the execution
+to the line 8 with the output</p>
+<pre><code>&gt; /home/libor/navigating.py(8)&lt;module&gt;()
+-&gt; number = inc(2)
+</code></pre>
+<p>We now may want to step into the <code>inc</code> function call. That can be done by issuing <code>s</code>
+command, moving us back to the line 1. However, if this time we issue <code>n</code>, it won't
+move to the line 7 again, but to the line 2.</p>
+<p>Issuing <code>r</code> at this moment will execute everything up to the return line (line 4) and stop there.
+It also means the <code>print</code> on line 2 will output <code>2</code>.</p>
+<p>And finally issuing <code>c</code> will continue the program until it stops. It should
+execute the <code>print</code> on the last line of the script outputing <code>3</code> and say
+<code>The program finished and will be restarted</code>. At this moment we are back
+on the line 1 and we can run all the commands again. To stop the debugger
+use <code>q(uit)</code>.</p>
+<h3>Listing source code</h3>
+<p>Now that we know how to navigate in debugger, it would be also nice to list the source code, because
+frankly, having to open a file containing the function we just stepped into would be tedious.</p>
+<p>For that pdb offers two commands. First of them is <code>l(ist)</code>, it lists 11 lines around line but when issued again,
+it lists next 11 lines. The command also takes 3 optional parameters, you can read how they work in the
+<a href="https://docs.python.org/3/library/pdb.html#pdbcommand-list">docs</a>. The second command is <code>ll</code> or <code>longlist</code>, which
+lists the source code of current frame - it can be function, method, class or the whole file. These commands are
+quite intuitive, so I will skip examples of their usage.</p>
+<h3>Breakpoints</h3>
+<p>With navigating and listing source code, we have solid basics for starting to place breakpoints.
+Of course, we can always use simply <code>breakpoint</code> function, but sometimes it is more convenient
+to use breakpoint functionality provided by pdb.</p>
+<p>Firstly let's look into <a href="https://docs.python.org/3/library/pdb.html#pdbcommand-break">documentation</a>:</p>
+<pre><code>b(reak) [([filename:]lineno | function) [, condition]]
+</code></pre>
+<p>This looks a bit complicated, but all parameters from the first square bracket are optional.
+It also means we can use just <code>b(reak)</code>, but more on that later.</p>
+<p>The easiest usage is <code>b &lt;linenumber&gt;</code>, which places a breakpoint in current file to line
+<code>linenumber</code>. We can also specify some other file using <code>b file:&lt;linenumber&gt;</code> which will
+place breakpoint into file to the specified line number. Also instead of linenumber we
+can use function name, but that sounds like too much typing. If we know the function name,
+we also know the line number (or at least modern IDEs should be able to tell us), so why
+bother with names. When we have specified breakpoints, we can simply run <code>c</code> and wait until
+it hits some breakpoint. Let's see that in action. We will use the previous example <code>navigating.py</code>:</p>
+<pre><code>python -m pdb navigating.py
+</code></pre>
+<p>Following output should show:</p>
+<pre><code>&gt; /home/libor/navigating.py(1)&lt;module&gt;()
+-&gt; def inc(x: int) -&gt; int:
+</code></pre>
+<p>Let's list the source code, so we can see where to put the breakpoint:</p>
+<pre><code>(Pdb) l
+  1  -&gt; def inc(x: int) -&gt; int:
+  2         print(x)
+  3         x += 1
+  4         return x
+  5
+  6
+  7     if __name__ == &quot;__main__&quot;:
+  8         number = inc(2)
+  9         print(number)
+[EOF]
+</code></pre>
+<p>There are not really many interesting places where to put a breakpoint, but
+line 8 looks promising, as there is a function call. So now command <code>b 8</code>
+will do that and we should see:</p>
+<pre><code>(Pdb) b 8
+Breakpoint 1 at /home/libor/navigating.py:8
+</code></pre>
+<p>Alternatively, we could use <code>b navigating.py:8</code> or specify the full file path <code>b /home/libor/navigating.py:8</code>
+(be sure to use your path, not mine :)).</p>
+<p>This says we have a breakpoint with id 1 set to line 8. We now need not use <code>n</code>
+or <code>s</code> to 'slowly' get to the line, instead we can just run <code>c</code> and the debugger
+will stop there on (any) encounter.</p>
+<pre><code>(Pdb) c
+&gt; /home/libor/navigating.py(8)&lt;module&gt;()
+-&gt; number = inc(2)
+</code></pre>
+<p>One more thing about placing breakpoints remain - conditioned breakpoints. Consider code like this:</p>
+<pre class="language-python"><code class="language-python"><span class="token comment"># iterating.py</span>
+items <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token string">"banana"</span><span class="token punctuation">,</span> <span class="token string">"apple"</span><span class="token punctuation">,</span> <span class="token string">"orange"</span><span class="token punctuation">]</span>
+
+<span class="token keyword">for</span> item <span class="token keyword">in</span> items<span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>item<span class="token punctuation">)</span></code></pre>
+<p>If we placed simple breakpoint on line 4 and run <code>c</code>, the debugger stops there. If now we wanted the
+debugger to just run until the end and simply issued another <code>c</code>, we end up on the same line.
+The reason is simple, we placed a breakpoint into loop and the loop runs 3 times. This might be tedious,
+especially if we only want to break in loop undder given conditions and we don't want to inspect all
+the other cases. Lucky for us, we can simply use <code>b 4, item == &quot;apple&quot;</code> and the <code>c</code> command will only
+break on line 4 if <code>item</code> is equal to <code>&quot;apple&quot;</code>.</p>
+<p>We have seen all the possible parameter choices for <code>b(reak)</code>, but what does it do without any parameters?
+It simply lists all the breakpoints we have set. If we continue with the previous example and
+put in <code>b</code> we will get</p>
+<pre><code>(Pdb) b
+Num Type         Disp Enb   Where
+1   breakpoint   keep yes   at /home/libor/iterating.py:4
+        stop only if item == &quot;apple&quot;
+</code></pre>
+<p>With this in hand, we can disable or enable a breakpoint and we can delete it by its id.
+Using <code>disable 1</code> in the previous example will disable the breakpoint</p>
+<pre><code>(Pdb) disable 1
+Disabled breakpoint 1 at /home/libor/iterating.py:4
+</code></pre>
+<p>If we now continue the debugger, it will run till the end of the script. We can enable the breakpoint
+again by using <code>enable 1</code> or remove it by running <code>clear 1</code>. We can also remove all breakpoints
+by running <code>clear</code>, this will prompt us <code>Clear all breaks?</code> and by <code>y</code> we confirm it.</p>
+<p>There is also (ignore)[https://docs.python.org/3/library/pdb.html#pdbcommand-ignore]
+command that can be used like <code>ignore bpnumber [count]</code>. It will ignore breakpoint count times
+and then enable it again.</p>
+<p>One convenient way of getting to some place is a <code>tbreak</code>. It has the same syntax as normal
+breakpoint but it 'disappears' the first time its hit. This can serve well when we want to
+reach some place in the code without setting there a permanent breakpoint (e.g. frequently called function).</p>
+<p>Another convenient way of moving forward in the code execution is using <code>unt(il)</code>, which only
+works in the current frame. Let's say we simply want to move few lines in the current function without setting
+a breakpoint, then using <code>unt(il)</code> is the best way to do so. Again to see this in the previous example:</p>
+<pre><code>(Pdb) unt 4
+&gt; /home/libor/iterating.py(4)&lt;module&gt;()
+-&gt; print(item)
+</code></pre>
+<h3>Inspecting variables, evaluating expressions</h3>
+<p>We have tools needed for navigating in the code, and we should be able to get to the critical parts
+of the code. But when we get there we also want to be able to inspect variables and evaluate expressions
+to get (ideally all) informations necessary for fixing the code. For that we have several options. One
+of the simplest is to print arguments of current function, to do that just run <code>a(rgs)</code>. We can see that on
+the navigating example:</p>
+<pre><code>python -m pdb navigating.py
+&gt; /home/libor/navigating.py(1)&lt;module&gt;()
+-&gt; def inc(x: int) -&gt; int:
+(Pdb) ll
+  1  -&gt; def inc(x: int) -&gt; int:
+  2         print(x)
+  3         x += 1
+  4         return x
+  5
+  6
+  7     if __name__ == &quot;__main__&quot;:
+  8         number = inc(2)
+  9         print(number)
+(Pdb) unt 8
+&gt; /home/libor/navigating.py(8)&lt;module&gt;()
+-&gt; number = inc(2)
+(Pdb) s
+&gt; /home/libor/navigating.py(1)inc()
+-&gt; def inc(x: int) -&gt; int:
+(Pdb) a
+x = 2
+</code></pre>
+<p>Even better are commands <code>p(rint)</code> and <code>pp</code> (<code>prettyprint</code>), let's see them in action.
+For these commands we don't really need any file to debug, we just need to get into
+a debugger, let's just use some file to get there but ignore everything in it.</p>
+<pre><code>python -m pdb iterating.py
+&gt; /home/libor/iterating.py(1)&lt;module&gt;()
+-&gt; items = [&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;]
+(Pdb) p list(range(23))
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+(Pdb) pp list(range(23))
+[0,
+ 1,
+ 2,
+ 3,
+ 4,
+ 5,
+ 6,
+ 7,
+ 8,
+ 9,
+ 10,
+ 11,
+ 12,
+ 13,
+ 14,
+ 15,
+ 16,
+ 17,
+ 18,
+ 19,
+ 20,
+ 21,
+ 22]
+</code></pre>
+<p>(The output may differ based on your display size. If the <code>pp</code> prints values in row, increase the range to e.g. 100)</p>
+<p>What happens here is that <code>p(rint)</code> prints out whatever representation of given object.
+In case it was a container such as dict or list, it would print it in a line regardless length.
+On the other hand <code>pp</code> looks at what the object to be printed is and tries to fit it into some
+line length, making it somewhat easier for the reader to read the output.</p>
+<p>On the above example there is also one more thing worth noticing, <code>p</code> and <code>pp</code> evaluate expressions.
+This means we can give it whatever expression available in the scope of current frame and it
+will be evaluated. This is the real power of pdb.</p>
+<p>Not only can we evaluate expression available in the current scope, we can also create our own scope.
+When I return to the previous example where we ended, we can do for example this:</p>
+<pre><code>(Pdb) import requests; requests.get(&quot;https://example.com&quot;)
+&lt;Response [200]&gt;
+</code></pre>
+<h3>Walking stack</h3>
+<p>This section is just to make our life easier. When we are debugging, we can
+print the whole stack and move on it up and down. The commands are <code>w(here)</code>
+for printing the stack, <code>u(p)</code> for moving up and <code>d(own)</code> for moving down.</p>
+<p>Let's see an example of a nested calls:</p>
+<pre class="language-python"><code class="language-python"><span class="token comment"># nested.py</span>
+<span class="token keyword">from</span> typing <span class="token keyword">import</span> Any<span class="token punctuation">,</span> Dict
+
+<span class="token keyword">import</span> requests
+
+
+<span class="token keyword">def</span> <span class="token function">get_response_json</span><span class="token punctuation">(</span>url<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> Dict<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    response <span class="token operator">=</span> requests<span class="token punctuation">.</span>get<span class="token punctuation">(</span>url<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> response<span class="token punctuation">.</span>json<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span>domain<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    url <span class="token operator">=</span> <span class="token string">"https://"</span> <span class="token operator">+</span> domain
+    data <span class="token operator">=</span> get_response_json<span class="token punctuation">(</span>url<span class="token punctuation">)</span>
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token string">"example.com"</span><span class="token punctuation">)</span></code></pre>
+<p>And debugging the inner most function:</p>
+<pre><code>python -m pdb nested.py
+&gt; /home/libor/nested.py(1)&lt;module&gt;()
+-&gt; from typing import Any, Dict
+(Pdb) b 8
+Breakpoint 1 at /home/libor/nested.py:8
+(Pdb) c
+&gt; /home/libor/nested.py(8)get_response_json()
+-&gt; return response.json()
+(Pdb) w
+  /home/libor/venv/lib/bdb.py(597)run()
+-&gt; exec(cmd, globals, locals)
+  &lt;string&gt;(1)&lt;module&gt;()
+  /home/libor/nested.py(17)&lt;module&gt;()
+-&gt; main()
+  /home/libor/nested.py(13)main()
+-&gt; data = get_response_json(url)
+&gt; /home/libor/nested.py(8)get_response_json()
+-&gt; return response.json()
+</code></pre>
+<p>At this moment we can see printed stack similarly as when our script crashes.
+Let's move up to the <code>main</code> function and see what was the value of <code>domain</code> variable</p>
+<pre><code>(Pdb) u
+&gt; /home/libor/nested.py(13)main()
+-&gt; data = get_response_json(url)
+(Pdb) ll
+ 11     def main(domain: str) -&gt; None:
+ 12         url = &quot;https://&quot; + domain
+ 13  -&gt;     data = get_response_json(url)
+(Pdb) p domain
+'example.com' 
+</code></pre>
+<p>We can also move back to the <code>get_response_json</code> function using <code>d</code> and at any point
+if we use <code>w</code> it will print the whole stack with an arrow indicating the frame we are
+currently in.</p>
+<h3>PDB cons</h3>
+<p>There are some cases where PDB won't be of much help.</p>
+<p>First of all debugging C or cython code requires gdb or other c debuggers.</p>
+<p>Debugging threads and multiprocesses in pdb doesn't work very well, there's no
+way to switch between threads, processes and continue execution of just that one.</p>
+<h2>Allternative debuggers</h2>
+<h3>iPDB</h3>
+<p><a href="https://pypi.org/project/ipdb/">iPDB</a> is a third party debugger that makes the user experience somewhat better
+especially because it offers syntax highlighting. The commands are the same as for
+plain pdb.</p>
+<p>It can be installed simply by <code>pip install ipdb</code> and invoked similarly as pdb,
+for example <code>python -m ipdb navigating.py</code>.</p>
+<p><img src="/images/pdb/ipdb.png" alt="iPDB"></p>
+<p>I personally dislike it for its verbosity, especially when it comes to inspecting the stack.
+Let's see example:</p>
+<pre><code>python -m ipdb nested.py
+&gt; /home/libor/nested.py(1)&lt;module&gt;()
+----&gt; 1 from typing import Any, Dict
+      2 
+      3 import requests
+
+ipdb&gt; b 8
+Breakpoint 1 at /home/libor/nested.py:8
+ipdb&gt; c
+&gt; /home/libor/nested.py(8)get_response_json()
+      7     response = requests.get(url)
+1---&gt; 8     return response.json()
+      9
+
+ipdb&gt; w
+</code></pre>
+<p>See the result here</p>
+<p><img src="/images/pdb/stack.png" alt="iPDB stack"></p>
+<p>But I believe iPDB can be useful especially when it comes to learning with debugger.</p>
+<h3>PyCharm's debugger</h3>
+<p>PyCharm's debugger is great especially when it comes to debugging threads and multiprocesses.
+You can simply place breakpoint anywhere in the code and it stops the execution there. It also
+allows to switch between threads and processes and inspect their variables.</p>
+<h2>Conclusion</h2>
+<p>PDB is great debugger for most of the developer's work. It's also useful to be familiar with it
+because it comes bundled to every python installation, so whenever you have to debug a code
+outside your environment, it's possibly the only option you have.</p>
+
+
+        </main>
+        <div class="footer">
+    <p>Built with <a href="https://www.11ty.dev">Eleventy</a></p>
+    <a href="https://github.com/libka-b" target="_blank">
+        <img src="/images/about/github-mark.png" class="github-logo">
+    </a>
+    <a href="mailto:lbakajsa@gmail.com">Contact Me</a>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/about/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x161" href="/images/about/favicon-16x16.png">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/prism-one-light.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+    <title>Mypy generics and subtypes</title>
+</head>
+    <body>
+        <h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        
+        <li>
+            <a href="/">Blog</a>
+        </li>
+        
+        <li>
+            <a href="/about">About</a>
+        </li>
+        
+    </ul>
+</nav>
+        <hr>
+        <h1>Mypy generics and subtypes</h1>
+        <main tabindex="-1" id="main-content">
+        
+<p class="published">Published on Apr 07, 2022</p>
+<p>Type <code>Optional[bool]</code> can be one of three values - <code>None</code>, <code>True</code> or <code>False</code>.
+Type <code>bool</code> can be one of <code>True</code> or <code>False</code>. So we can easily say that
+<code>bool</code> is subtype of <code>Optional[bool]</code>, right? Let's see what happens when
+we start nesting these types.</p>
+<p>Recently, I was writing a code that I was sure would pass mypy checks, but it didn't.
+Let's look at minimal example of such code:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> typing <span class="token keyword">import</span> List<span class="token punctuation">,</span> Optional
+
+
+<span class="token keyword">def</span> <span class="token function">filter_out_nones</span><span class="token punctuation">(</span>opt_bool_list<span class="token punctuation">:</span> List<span class="token punctuation">[</span>Optional<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> List<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    bool_list<span class="token punctuation">:</span> List<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    bool_list <span class="token operator">=</span> filter_out_nones<span class="token punctuation">(</span>bool_list<span class="token punctuation">)</span>  <span class="token comment"># mypy fails here</span></code></pre>
+<p>If you run mypy on a script like this, even without strict mode it outputs this error:</p>
+<pre><code>script.py:10: error: Argument 1 to &quot;filter_out_nones&quot; has incompatible type &quot;List[bool]&quot;; expected &quot;List[Optional[bool]]&quot;
+script.py:10: note: &quot;List&quot; is invariant -- see https://mypy.readthedocs.io/en/stable/common_issues.html#variance
+script.py:10: note: Consider using &quot;Sequence&quot; instead, which is covariant
+Found 1 error in 1 file (checked 1 source file)
+</code></pre>
+<p>If my function can operate on list of <code>Optional[bool]</code>, I would expect it
+to be able to also operate on <code>bool</code>. So what's the problem here?</p>
+<p>To illustrate the issue, I will create a new generic class, where we
+can see more easily what's happening.</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> typing <span class="token keyword">import</span> Generic<span class="token punctuation">,</span> List<span class="token punctuation">,</span> Optional<span class="token punctuation">,</span> TypeVar
+
+
+T <span class="token operator">=</span> TypeVar<span class="token punctuation">(</span><span class="token string">"T"</span><span class="token punctuation">)</span>
+
+
+<span class="token keyword">class</span> <span class="token class-name">MyList</span><span class="token punctuation">(</span>Generic<span class="token punctuation">[</span>T<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+
+<span class="token keyword">def</span> <span class="token function">filter_out_nones</span><span class="token punctuation">(</span>opt_bool_list<span class="token punctuation">:</span> MyList<span class="token punctuation">[</span>Optional<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> MyList<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    bool_list<span class="token punctuation">:</span> MyList<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span> <span class="token operator">=</span> MyList<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    bool_list <span class="token operator">=</span> filter_out_nones<span class="token punctuation">(</span>bool_list<span class="token punctuation">)</span>
+</code></pre>
+<p>And see what's being substituted where. The function <code>filter_out_nones</code> accepts
+type <code>MyList[T]</code>, where <code>T = Optional[bool]</code>, which could also be written
+as <code>U[T] = Optional[bool]</code> and we are passing type <code>MyList[T]</code> where <code>T = bool</code>.
+Now, we can easily see, that <code>U[T] != T</code>, and even though <code>bool</code> is subtype of
+<code>Optional[bool]</code>, it doesn't apply in general that type <code>T</code> is subtype of type <code>U[T]</code>
+and mypy doesn't do this kind of deep analysis. Therefor it just say we are passing
+incompatible types (and in a way its true).</p>
+<p>Just for comparison - <code>int</code> is subtype of <code>float</code> (no nested generics) and it works:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> typing <span class="token keyword">import</span> List
+
+
+<span class="token keyword">def</span> <span class="token function">some_func</span><span class="token punctuation">(</span>floats<span class="token punctuation">:</span> List<span class="token punctuation">[</span><span class="token builtin">float</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> List<span class="token punctuation">[</span><span class="token builtin">float</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    some_func<span class="token punctuation">(</span><span class="token builtin">list</span><span class="token punctuation">(</span><span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
+<h2>How to solve this</h2>
+<p>To persuade mypy to believe us, simply use <a href="https://docs.python.org/3/library/typing.html#typing.cast"><code>cast</code></a>:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> typing <span class="token keyword">import</span> List<span class="token punctuation">,</span> Optional<span class="token punctuation">,</span> cast
+
+
+<span class="token keyword">def</span> <span class="token function">filter_out_nones</span><span class="token punctuation">(</span>opt_bool_list<span class="token punctuation">:</span> List<span class="token punctuation">[</span>Optional<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> List<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    bool_list<span class="token punctuation">:</span> List<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    bool_list <span class="token operator">=</span> filter_out_nones<span class="token punctuation">(</span>
+        cast<span class="token punctuation">(</span>List<span class="token punctuation">[</span>Optional<span class="token punctuation">[</span><span class="token builtin">bool</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span> bool_list<span class="token punctuation">)</span>
+    <span class="token punctuation">)</span>  <span class="token comment"># everything's fine</span></code></pre>
+
+
+        </main>
+        <div class="footer">
+    <p>Built with <a href="https://www.11ty.dev">Eleventy</a></p>
+    <a href="https://github.com/libka-b" target="_blank">
+        <img src="/images/about/github-mark.png" class="github-logo">
+    </a>
+    <a href="mailto:lbakajsa@gmail.com">Contact Me</a>
+</div>
+
+    </body>
+</html>

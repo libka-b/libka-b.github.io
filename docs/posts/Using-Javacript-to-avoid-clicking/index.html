@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/about/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x161" href="/images/about/favicon-16x16.png">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/prism-one-light.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+    <title>Using Javascript to avoid clicking</title>
+</head>
+    <body>
+        <h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        
+        <li>
+            <a href="/">Blog</a>
+        </li>
+        
+        <li>
+            <a href="/about">About</a>
+        </li>
+        
+    </ul>
+</nav>
+        <hr>
+        <h1>Using Javascript to avoid clicking</h1>
+        <main tabindex="-1" id="main-content">
+        
+<p class="published">Published on Jan 28, 2025</p>
+<p>Recently, I had to check hundreds of checkboxes to proceed with my work and the website didn't expose any API that I could leverage to make my life easier. Being a proper lazy developer who doesn't want to click hundreds of times using mouse and potentially missing some of the buttons, I got an idea involving Javascript and developer console.</p>
+<h3>Developer console</h3>
+<p>Every modern browser comes with a development console and let's you inspect the contents of a webpage, run some javascript, inspect network traffic, etc... It can probably do things I've never heard of, but even for web developer newbies such as myself it's pretty useful tool.</p>
+<p>Since I am using Firefox, everything related to the development console will be referred to with regard to Firefox. I suppose it works similarly in other browsers too. The Firefox' <a href="https://firefox-source-docs.mozilla.org/devtools-user/index.html">official documentation</a> can give good idea.</p>
+<h3>Javascript</h3>
+<p>Javascript was created to execute code from a webpage on your local device. It's power lies especially at manipulating the webpage content based on users' action. There's long history to Javascript and I know close to nothing about it, so I'll just refer to some <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">documentation</a>.</p>
+<h3>Putting it all together</h3>
+<p>Let's assume we have a website that has some <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox">checkbox</a> like this:</p>
+<input type="checkbox" value="test">
+<p>And our task is to check the box programmatically.</p>
+<p>First let's open the development console using F12. In the 'inspector' section, after expanding couple of the first enclosing tags, we can see something like this:</p>
+<p><img src="/images/js-to-avoid-clicking/dev-console.png" alt="console"></p>
+<p>Alright, so the checkbox has value of <code>test</code>. We can use Javascript's <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll"><code>querySelectorAll</code></a> to select all elements matching our selector. In our case we can run this:</p>
+<pre class="language-javascript"><code class="language-javascript">document<span class="token punctuation">.</span><span class="token function">querySelectorAll</span><span class="token punctuation">(</span><span class="token string">'input[type="checkbox"]'</span><span class="token punctuation">)</span></code></pre>
+<p>To run it, switch tab in your console to 'Console', paste the above code and hit enter. You should see something like this</p>
+<p><img src="/images/js-to-avoid-clicking/query-selector.png" alt="query"></p>
+<p>When you click the input on the next line, it actually points you to the checkbox in the html code in the 'Inspector' tab.</p>
+<p>Now to check the checkbox, we need to do moore than just finding it. According to the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#using_checkbox_inputs">documentation</a>, the box is checked when its property <code>checked</code> is true. Let's code that:</p>
+<pre class="language-javascript"><code class="language-javascript">document<span class="token punctuation">.</span><span class="token function">querySelectorAll</span><span class="token punctuation">(</span><span class="token string">'input[type="checkbox"]'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">checkbox</span> <span class="token operator">=></span> <span class="token punctuation">{</span>checkbox<span class="token punctuation">.</span>checked <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+<p>Run this in this console and also check visually that now the checkbox really is checked!</p>
+<p>To make sure we select only the checkboxes we really want, we can further refine the query to include other attributes too. For example, since our checkbox has value equal to test, we can (and should) include that too:</p>
+<pre class="language-javascript"><code class="language-javascript">document<span class="token punctuation">.</span><span class="token function">querySelectorAll</span><span class="token punctuation">(</span><span class="token string">'input[type="checkbox"][value="test"]'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">checkbox</span> <span class="token operator">=></span> <span class="token punctuation">{</span>checkbox<span class="token punctuation">.</span>checked <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+<p>This was fun. Instead of performing gazillions of boring mouse clicks I learnt a bit of a Javascript and mainly had fun doing that. This follows the notoriously famous &quot;Automate the boring stuff&quot; or &quot;When you have to do something twice, take a look to see if that can be automated. That extra time can pay off as there's a good chance you'll have to do it yet again.&quot;.</p>
+
+
+        </main>
+        <div class="footer">
+    <p>Built with <a href="https://www.11ty.dev">Eleventy</a></p>
+    <a href="https://github.com/libka-b" target="_blank">
+        <img src="/images/about/github-mark.png" class="github-logo">
+    </a>
+    <a href="mailto:lbakajsa@gmail.com">Contact Me</a>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/about/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x161" href="/images/about/favicon-16x16.png">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/prism-one-light.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+    <title>Migrating Jekyll blog to Eleventy</title>
+</head>
+    <body>
+        <h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        
+        <li>
+            <a href="/">Blog</a>
+        </li>
+        
+        <li>
+            <a href="/about">About</a>
+        </li>
+        
+    </ul>
+</nav>
+        <hr>
+        <h1>Migrating Jekyll blog to Eleventy</h1>
+        <main tabindex="-1" id="main-content">
+        
+<p class="published">Published on Feb 12, 2025</p>
+<p>I decided to migrate my Jekyll based blog to another static site generator based one. My eyes were first on <a href="https://gohugo.io/">Hugo</a> but I found it overly complicated with little explanations. My next option was <a href="https://www.11ty.dev">Eleventy</a> with its great in-depth tutorial. Here, I won't be describing my step by step process to migrating rather I will focus on differences and the overall experience.</p>
+<h2>Why migrate off of Jekyll in the first place</h2>
+<p>Jekyll was great and got me blogging 3 years ago. However, I found myself in a position where I wanted to update part of the blog, but I couldn't run it locally. The Docker image wasn't working anymore. Jekyll is written in Ruby and knowing little to nothing about it, I didn't feel like pursuing the option of running it locally either. Being seasoned developer, I didn't like the cowboy style option of updating the blog, pushing it to git and seeing what happens. That brought me to the idea of modernizing the blog.</p>
+<h2>Why not Hugo</h2>
+<p>I liked the fact that Hugo is developed in Go which compiles into a statically linked binary. You simply download one binary and it works. However, after fiddling around a bit, I found it wasn't as straightforward to use as other options. Once you set up the project, you need to choose the theme. I wanted to make things myself and learn something new but there didn't seem to be some good tutorials on how to do your own themes and other themes that I thought I would use as a guidance seemed already too mature to be able to learn from them. I abandoned the Hugo idea after couple of hours of trying, googling and getting absolutely no progress.</p>
+<h2>Why Eleventy</h2>
+<p>After some more research I found that there's dozens of static website generators. Having learned my lessons from Hugo, I was looking for one that would have some nice tutorial which was how I found Eleventy. Its <a href="https://learn-eleventy.pages.dev/">31 step tutorial</a> seems a bit like overkill but surely it would cover all the features I would need to set everything.</p>
+<p>I can't say I understood all of the tutorial, especially the parts where the author was setting too many classes on each of the HTML element but hey, I am not a frontend developer. It probably has some reason. I like the overall structure and the topics covered in the first 10 lessons were enough to set me up. From the configuration, to templating system, to partials, data and assets.</p>
+<p>One thing that seemed like overkill was the CSS where, for me, it was enough to simply copy files to my destination. No SASS (hell, I don't even know what that is).</p>
+<p>While setting up all the features to get the blog on par with my original one (or at least close to it), I realized how some things in Jekyll were really simple and I really appreciate it in retrospective. If those 3 years ago I started with something else, I might have given up on that as there were simply too many foreign concepts for me.</p>
+<p>In Jekyll, you just name the file as '${date-time}-${title}.md' and it does all the magic for you - sorts the posts based on the date and displays the title and the first paragraph should you want to. In Eleventy, this is the work you have to do. Sorting the posts yourself, setting excerpt delimiter in each post to denote what should be displayed as excerpt, to setting up the post title.</p>
+<p>However, knowing what I want to achieve in the first place, I also knew what to search for when being stuck and it also led me to making clear distinction between data and functionality. The original blog was also full of hacks which are mostly gone now. I want to do some updates in the future but this sets the baseline to that.</p>
+<p>This project made me realize very important thing - it's crucial to set realistic goals. In past, I had many project ideas but there were so many unknowns that I would eventually give up. Approaching a goal with clear vision and execution path in mind is much more likely to actually meet the goal. And even when the execution path is clear, one can be sure that there will be unexpected road blocks and setbacks.</p>
+
+
+        </main>
+        <div class="footer">
+    <p>Built with <a href="https://www.11ty.dev">Eleventy</a></p>
+    <a href="https://github.com/libka-b" target="_blank">
+        <img src="/images/about/github-mark.png" class="github-logo">
+    </a>
+    <a href="mailto:lbakajsa@gmail.com">Contact Me</a>
+</div>
+
+    </body>
+</html>

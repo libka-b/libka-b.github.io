@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/about/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x161" href="/images/about/favicon-16x16.png">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/prism-one-light.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+    <title>Git Cheatsheet</title>
+</head>
+    <body>
+        <h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        
+        <li>
+            <a href="/">Blog</a>
+        </li>
+        
+        <li>
+            <a href="/about">About</a>
+        </li>
+        
+    </ul>
+</nav>
+        <hr>
+        <h1>Git Cheatsheet</h1>
+        <main tabindex="-1" id="main-content">
+        
+<p class="published">Published on Feb 18, 2023</p>
+<p>It just recently happened to me that I wanted to do something in git,
+I knew exactly what but was unable to remember the git command
+that would do that. So I decided to make this blog, mainly for me,
+to keep all my favorite git commands and workflows in a single place.
+But if someone else finds this useful it would be great.</p>
+<p>Many developers tend to use the VCS (git) support built into their favorite
+IDE which is shame as git is very powerful tool and the IDE support
+cannot possibly cover all the flags that git commands offer. And it's also
+fun to compete with colleagues to achieve one thing in different possible ways
+which with git you totally can.</p>
+<p>I will go through most of the git commands, leaving out the boring ones (<code>rm</code>, <code>mv</code>, <code>status</code>,
+<code>tag</code> and <code>fetch</code>), the new ones (<code>switch</code>, <code>restore</code>) and those that I don't
+use very much (<code>bisect</code>, <code>show</code>).</p>
+<h2>clone</h2>
+<p>Well, there's not much to this command, just copy the link from the repository
+you want to clone and run <code>git clone &lt;my-awesome-repo&gt;</code>.</p>
+<p>There are many possible options to this command with little to no value in the
+online world. One option is really worth mentioning though, <code>&lt;directory&gt;</code>
+specifies which directory to clone the repository to. So
+<code>git clone ssh://whatever/my-awesome-repo.git awesome</code> will clone your repo into
+directory <code>awesome</code> instead of <code>my-awesome-repo</code> which may save one <code>mv</code> command.</p>
+<h2>init</h2>
+<p>Also not much to this command. Just the <code>--initial-branch</code> flag can save some typing
+when you don't want to use the default branch name. Yes, I am the one old developer
+who started with git when default was <code>master</code> and always want to cry when I type
+<code>git checkout mas</code>, hit tab and nothing happens.</p>
+<p>This command is however often followed by <code>git remote</code> and perhaps <code>git config</code>.</p>
+<h2>remote</h2>
+<p>Because working with origin may be pain. Initializing a repository is usually followed
+by setting up a remote repository. Github for one generates the commands to run right
+after creating a new repo and shows them until the first commit is pushed. But github
+is not the only git hosting system and not all have to be that nice. So it's better to
+know the commands than be sorry.</p>
+<p>To set up an origin do <code>git remote add origin &lt;repo&gt;</code>. It also comes in handy to be able
+to change origin. That's done by <code>git remote set-url origin &lt;repo&gt;</code>. Of course the
+remote repository doesn't have to be named <code>remote</code> but it's a convention in most of
+the projects. Command to see the name of the remote repo is <code>git remote -v</code>.</p>
+<h2>config</h2>
+<p>We all know those commands that always show up when trying to push code on freshly
+installed laptop.</p>
+<pre><code>Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email &quot;you@example.com&quot;
+  git config --global user.name &quot;Your Name&quot;
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository
+</code></pre>
+<p>Using <code>git config</code> is also way to set up some alias. Just run
+<code>git config --global alias.&lt;my-alias&gt; &lt;git-command&gt;</code>. For example
+my favorite one is
+<code>git config --global alias.lol &quot;log --all --decorate --oneline --graph&quot;</code>,
+then I simply run <code>git lol</code> and see a nice graph of commits on current
+repository.</p>
+<p>For fans of editors different than <code>vim</code> it can be useful to set a
+different one using <code>git config --global core.editor &lt;editor-path&gt;</code>.</p>
+<p>And not to forget, it can also serve for setting up a global gitignore.
+As I always name temporary files using dirty words (in czech,
+so luckily majority of the world won't understand), I used to set them
+in the global gitignore, so that they don't end up accidentally in the
+remote repository. <code>git config --global code.excludesfile ~/gitignore</code>
+sets the global gitignore to file <code>~/gitignore</code> but it's up to anyone to
+name the file. It could just as well be <code>/root/ignorant</code> with the right
+permissions.</p>
+<h2>add</h2>
+<p>This is one of the first command everyone learns when starting with git,
+and it's one of the most often used I dare say. It simply indexes the changes
+to be committed the next time <code>git commit</code> is run. However, it has some
+interesting options.</p>
+<p><code>git add -N</code> adds the file to the index, but without it's content. This is
+extremely useful when working a on new file as it makes it possible to
+<code>git diff</code> the changes made to the file.</p>
+<p>Another interesting option is <code>git add -p</code>. It let's you interactively add
+chunks of code in a file while leaving others not added. My manager once asked
+me about this option and I explained him. He then told me something like:
+&quot;Well, it seems to me like you are putting something bad into the code and
+then have to bypass it this way.&quot; And he was right. I was using this way to
+keep secrets in my code and not commit them to the repo. But of course I forgot
+from time to time.</p>
+<p>Some people tend to use <code>git add -A</code> before committing the changes. I advice
+against it and will talk of it later in the <code>diff</code> section.</p>
+<h2>diff</h2>
+<p>This is very important command and I believe it should be used at least as
+often as <code>git add</code>. Apart from diffing the changes on modified files, it
+can diff changes between commits, branches and even between remote servers.
+For example <code>git diff &lt;commit-1&gt;:&lt;path&gt; &lt;commit-2&gt;:&lt;path&gt;</code>.</p>
+<p>Mostly, though, it's necessary to simply diff the change on modified files.
+Many people tend to run <code>git diff</code> which will diff all the changes made,
+usually followed by <code>git add</code> and commit. I personally don't like this
+approach and I have seen the bad results of this. My colleague once committed
+his changes this way as he was used to, but then in the CI the build was
+failing. He spent hours searching for the fault only to discover that one
+file that was supposed to be named somehow contained a space in its name
+and so the build system would ignore (rightly). If diffing and adding
+files one by one, this would never happened because the author would
+spot the trailing space on the spot.</p>
+<p>And I suggest doing that - before
+committing to go through each file individually and thoroughly
+check the changes made and add each file after done checking. If new changes
+need to be made to already added files, iterate the whole process until
+all files to be added are thoroughly checked and added.</p>
+<h2>grep</h2>
+<p>Similar to classic <code>grep</code> with the only difference that the grepped files are
+the ones not ignored in the current repository.</p>
+<h2>log</h2>
+<p>Very powerful tool for searching the short commit messages as well as the
+long ones. As I mentioned in the config section, my favorite is
+<code>git log --all --decorate --oneline --graph</code> as it displays graph of commits
+along with their respective branches and where the current <code>HEAD</code> is and
+where origin is.</p>
+<h2>checkout</h2>
+<p>Possibly, <code>git switch</code> and <code>git restore</code> are modern substitute commands
+for <code>git checkout</code>. Perhaps because <code>checkout</code> does many different things.
+However, I am still used to checkout.</p>
+<p><code>git checkout -b &lt;branch-name&gt;</code> creates a new branch and switch to it.
+Adding <code>--orphan</code> flag will create a new branch that has no common history.
+That might be good for example for generating automatic docs in a separate
+branch (like <code>gh-pages</code>) where no commit history or common commit is
+needed, and yet it is fitting for the branch reside in the same repository.</p>
+<p><code>git checkout &lt;branch-name|commit&gt;</code> switches to existing branch or commit.
+While <code>git checkout &lt;filename&gt;</code>, where there are unstaged changes to the
+filename, undoes those changes.</p>
+<p>Checkout works with the <code>-p</code> parameter similarly to the <code>add</code> although in
+exactly opposite way - yesed chunks are checked out. It sounds obvious
+but may be very confusing.</p>
+<h2>branch</h2>
+<p>Without any parameters, it lists all the branches in local repository.
+Adding <code>-r</code> option shows remote branches. Replacing <code>-r</code> with <code>-a</code>
+lists branches on both local and remote.</p>
+<p>Deleting branches might get tricky. To delete merged branch,
+<code>git branch -d &lt;branch-name&gt;</code> should suffice. However, when there
+are some unmerged changes and the branch is still to be removed,
+the command must be run with <code>--force</code> or using <code>git branch -D &lt;branch-name&gt;</code>.
+These commands delete branch locally, but if we also want to get rid
+of its origin counterpart, we need to push the change to the remote
+repository. In the <code>push</code> section I will try to explain this.</p>
+<p>Sometimes there's a need to rename a branch. To do so, run
+<code>git branch -m &lt;new-branch-name&gt;</code> on the branch to be renamed. Using
+<code>-M</code> instead of <code>-m</code> forces the rename.</p>
+<h2>commit</h2>
+<p>The command for adding the currently staged changes to the commit history.
+Most often use is <code>git commit -m &quot;&lt;commit-message&gt;&quot;</code>. I often find myself
+in a need to update a commit (because I forgot to update some files and
+tests are not passing, updating documentation,... There may be many reasons
+for that) and the way to do that is <code>git commit --amend</code>. If the commit
+is already in the remote, then updating it in remote branch is done using
+force push (not recommended on main branch though).</p>
+<p>Sometimes rewriting the commit author comes in handy (for example when
+using work computer for both work and github projects and forgetting
+to set author locally). This is achieved by <code>git commit --amend --reset-author</code>.</p>
+<h2>merge</h2>
+<p>Git merge is often a straightforward operation. Make a branch, do some
+changes, merge to the main branch, resolve conflicts and it's done.
+But resolving conflicts while merging creates a merge commit which may
+be undesirable. There's a flag for that, <code>--ff-only</code>, which refuses to
+merge the branch when that would result in conflicts. The way to &quot;resolve
+conflicts upfront&quot; without creating a merge commit is rebasing the branch
+on top of the branch to merge to.</p>
+<h2>rebase</h2>
+<p>The classic approach to rebasing is to run <code>git rebase -i &lt;branch-to-rebase-to&gt;</code>
+on the branch to be updated. Atlassian has a really great
+<a href="https://www.atlassian.com/git/tutorials/rewriting-history/git-rebase">docs</a>
+explaining how this works. The <code>-i</code> option makes the rebasing interactive
+in terms that for each commit, it will try to resolve conflicts where possible
+and where not, it will let the user to do so and by running <code>git rebase --continue</code>
+continue to the next commit, or by running <code>git rebase --abort</code> to abort the
+rebase and return to the state before running <code>git rebase -i</code>. Git status while
+rebasing (as well as merging) is the best friend.</p>
+<p>Rebasing is also used to fix-up or squash commits. This is a great thing to do
+in order to keep the commit history clean.</p>
+<h2>reset</h2>
+<p>Git reset is another good friend. It comes in handy in multiple ways. One is
+to &quot;undo&quot; a commit. I often run command <code>git reset HEAD^1 --soft</code>. This will
+undo (and remove) the last commit but keep all the changes staged, allowing
+one to see the changes files.</p>
+<p>Hand in hand with resetting a commit comes resetting a staged file. To do that
+run <code>git reset HEAD &lt;file-name&gt;</code>.</p>
+<p>There's also more brutal way to &quot;undo&quot; a commit and that's
+<code>git reset HEAD^1 --hard</code>. This simply removes all untracked files, undoes the
+last commit and clear all changes done. It changes the state of the repository
+to the exact one as of the previous commit.</p>
+<h2>revert</h2>
+<p>Revert creates a commit with exact opposite changes. So for example running
+<code>git revert HEAD^1</code> will create a new commit with exact opposite changes as
+those done in the last commit. This may come in handy when there are changes
+to be reverted on main branch where force pushing would make all other developers
+just angry.</p>
+<h2>stash</h2>
+<p>Running <code>git stash</code> will save all currently made changes (to save the untracked
+files, add <code>--include-untracked</code> flag) to the stash, making current index clear.
+This is very important when, for example, there's work in progress on current branch
+and a critical bug emerges in production that needs to be immediately fixed. Without
+stashing the changes, the workaround would be to commit the changes and then to reset
+them.</p>
+<p>Listing the stashed changes can be done using <code>git stash list</code> and using <code>git lol</code>
+(shown above) shows on which commits the changes were stashed.</p>
+<p>Running <code>git stash pop</code> will load the changes from the stash and drop them from the stash.
+Beware, if loading the changes would result in merge conflicts, the changes are not
+dropped from the stash. This tripped me quite recently and I was wondering why
+I was getting always the same changes from the stash when running <code>git stash pop</code>
+and thought it was a bug, only to find out that this was desired behavior. In case
+like that <code>git stash drop</code> does the job.</p>
+<h2>pull</h2>
+<p>Git pull may look like one of the boring commands but there are some quirks to it.
+When the local and remote history don't differ, it will just update
+the local history (the happy scenario).</p>
+<p>When the local and remote history differ (this may happen for example as a result
+of two merged branches that were changing different lines of code and therefor not
+creating merge conflicts) the classic <code>git pull origin &lt;branch&gt;</code> will fail. In such
+case we are dealing with a merge and git pull defines some flags to deal with it
+the right way.</p>
+<p>One way would be to run <code>git pull origin &lt;branch&gt; --force</code> which will result
+in complete rewriting local history with the remote history. This may be good
+enough to make sure the repositories are in sync.</p>
+<p>Another way would be to pass in <code>--rebase=interactive</code> flag to solve the local
+history as needed. This may come in handy when the local history is ahead of
+remote history as the <code>--force</code> flag would erase the extra local commits.</p>
+<p>Pull also allows to specify different merge strategies using <code>--strategy-option</code>,
+that however may result in creating an extra commit which may be undesirable.</p>
+<h2>push</h2>
+<p>Pushing is simple, except when it isn't. When rebasing or mangling already
+pushed commit, it must be pushed with <code>--force</code> flag. Just make sure not to
+do it on the main branch.</p>
+<p>Another thing where pushing is necessary is for removing remote branches.
+To do that, after removing the branch locally, run <code>git push origin :&lt;branch&gt;</code>.
+The empty space before the <code>:</code> is because the branch doesn't exist locally
+anymore.</p>
+<h2>Conclusion</h2>
+<p>In my years of coding I've used many of the flags and tools git offer some of
+them may be thought of as esoteric even but it's fun and each one of them
+helps towards greater understanding of git, and workflows it allows.</p>
+<p>And of course while writing this, I keep the document versioned in git :)</p>
+
+
+        </main>
+        <div class="footer">
+    <p>Built with <a href="https://www.11ty.dev">Eleventy</a></p>
+    <a href="https://github.com/libka-b" target="_blank">
+        <img src="/images/about/github-mark.png" class="github-logo">
+    </a>
+    <a href="mailto:lbakajsa@gmail.com">Contact Me</a>
+</div>
+
+    </body>
+</html>
