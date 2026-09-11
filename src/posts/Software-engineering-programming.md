@@ -1,7 +1,7 @@
 ---
 layout: layouts/article.html
 title: 'Software Engineering'
-date: '2025-04-19'
+date: '2026-04-19'
 ---
 
 Oftentimes when I tell someone that I am a software engineer, the reaction would be "Wow, you must be coding all the time.". I'd like to devote a whole series of articles to what I think it means to be a software engineer and each of the articles will focus on a single individual aspect of it. In this first article, I'll give a high-level overview of what software engineering is (in my opinion) and will follow up with articles on each individual part.
