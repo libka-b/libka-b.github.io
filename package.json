@@ -5,7 +5,8 @@
   "main": ".eleventy.js",
   "type": "module",
   "scripts": {
-    "start": "npx eleventy --serve"
+    "start": "npx eleventy --serve",
+    "build": "npx @11ty/eleventy"
   },
   "keywords": [],
   "author": "",
