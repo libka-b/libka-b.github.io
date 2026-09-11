@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDFMVVJS0B"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NDFMVVJS0B');
+</script>
+
+    <meta name="theme-color" content="#ffffff">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/about/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x161" href="/images/about/favicon-16x16.png">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/prism-one-light.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;400&display=swap">
+    <title>Software Engineering: Coding</title>
+</head>
+    <body>
+        <h1 class="nav">Libor's blog</h1>
+<nav>
+    <ul class="nav">
+        
+        <li>
+            <a href="/">Blog</a>
+        </li>
+        
+        <li>
+            <a href="/about">About</a>
+        </li>
+        
+    </ul>
+</nav>
+        <hr>
+        <h1>Software Engineering: Coding</h1>
+        <main tabindex="-1" id="main-content">
+        
+<p class="published">Published on Sep 10, 2026</p>
+<p>This is the first follow up on my previous <a href="Software-engineering-programming.md">post</a>. In that post, I started by talking about the design but I'd like to kick off this series with the coding and get back to the design as a later part. The reason being that although coding is not the thing engineers spend most time doing, it's still the part that everything else builds up on. That's mostly because understanding the code in depth means the engineers create their own internal model of the application and its ecosystem that enables them to make quick decisions and informed trade-offs.</p>
+<h2>What does it mean to be a programmer?</h2>
+<p>From the outside world it might seem that programming is just a single discipline conveying that the person &quot;writes code&quot;. Although true, there are many nuances to it. Even at the code level there are different perspectives a person can take. At the very detail, they might be optimizing certain code paths just to squeeze the most out of their compute power. Zooming a bit out, they might want to create a class that reads like a book. And zooming out a bit more, the goal might be a perfect cooperation between individual components. In case of libraries (or modules, packages, etc...) the goal might be to provide APIs that are nice to work with. Let's break this down, from the very detail to the higher level view.</p>
+<h3>Algorithms and data structures</h3>
+<p>It's not common to implement algorithms in the production code and rather use well established libraries to achieve the same. Typically, researching algorithms and data structures is done in academia. However, it's still fundamental for the developers to know what to use and when. Knowing if I am going to be accessing an array (or list) or a map requires knowing the trade-offs (speed vs storage) and what is required to do with the data at hand.</p>
+<p>Even when using higher level languages where the developer is abstracted away from the concrete implementation (how many bytes is my integer, how is string implemented, how memory is allocated, etc...), knowing what the time and space complexity of the chosen algorithms are is fundamental as that affects the speed (or memory usage) of the application being developed. Since there are so many different data structures and each has different pros and cons, it usually takes time to develop a proper intuition to know what to use and when.</p>
+<h3>Encapsulation and types</h3>
+<p>Encapsulation may sound a bit strange but that's exactly what it is. Classes in imperative languages allow us to encapsulate certain logic in them and expose methods to work with them. This may be an array exposing a sort method that returns sorted array. It doesn't expose how nor does it expose the intermediate state. This is crucial for making sure the state of the program is always consistent to help us reason about it. Another example would be a class for emitting metrics that exposes an <code>increment</code> method but doesn't expose the recorded metrics. It does take care of e.g. regularly flushing them and provides functionality for graceful shutdown.</p>
+<p>Ideally, classes should always expose immutable data and mutate the state in their private methods to prevent unintended mutations leading to inconsistent states.</p>
+<p>Classes are concrete implementation but in higher-level languages we can usually also specify types, or interfaces, which tell us what we can do with it but the specific implementation is not provided. Think about a data access object, it might have method <code>getData</code> but then might be implemented differently depending on the call site. For example, tests might just mock the object, the development environment may provide a local file reader and production code might be calling real database and all that is hidden behind the interface as we don't need to know the details of the 'how' as long as we know the 'what'.</p>
+<h3>Design patterns</h3>
+<p>Classes and types allow us to organize our code into larger building blocks. We still need to carefully design how those blocks are going to interact, how the data is going to flow through the program and how the different classes are constructed during the runtime, how the data is cached, what objects can be lazy, etc... For that, it's crucial to understand the design patterns and know when to apply which.</p>
+<p>Should I build this object using builder pattern or DSL? Can I use visitor pattern for traversing recursive data structures? How can I track lots of small objects?</p>
+<p>These are all questions that are quite simple to answer when knowing the design patterns. Personally, I recommend the book Design Patterns by &quot;The Gang of Four&quot;. Although a bit older, the information there is not outdated.</p>
+<h3>Concurrency</h3>
+<p>When we have all the building blocks communicating together we would usually scale or optimize the application to be able to handle more work and do it faster by doing things concurrently (does not necessarily mean parallel). This can be achieved in multiple ways, by using virtual or OS threads or by handling some tasks asynchronously.</p>
+<p>Concurrency is an endless source of bugs and errors and the best way to prevent them is to avoid concurrency at all. However, it's often the way to squeeze way higher performance from the application. The second best way is to carefully design the application to prevent sharing mutable state between threads, entering deadlocks and other things hard to debug.</p>
+<h3>Error handling</h3>
+<p>Knowing how to properly handle errors requires knowing which errors are fatal and which are recoverable. Recoverable errors (such as HTTP 503) mean the resource is temporarily unavailable due to failure of downstream dependency (for example database failover) and we should just wait a little bit more and try again. This can be implemented using the exponential retry backoff with jitter to prevent storming our dependencies in case of cascading failures. When the error is not recoverable, the application should fail gracefully, ideally providing some useful information as to why.</p>
+<h3>Dependency injection</h3>
+<p>When all the building blocks are in place, we still need some entry point starting our application. Small applications can just do everything in their <code>main</code> function but as the application grows larger and larger and there might be different modes of running it, it's much better to follow the best practices of dependency injection and make sure to pass all the objects needed for another one to instantiate rather than having the object instantiate its dependencies.</p>
+<p>When I say different modes of running the application, I mean even testing it. If it's hard to unit-test some class, it's typically indicating some problem with how the dependencies are treated in that class. DI frameworks can usually determine the dependency between the objects, so the developers don't need to think about this.</p>
+<h3>API design</h3>
+<p>At the very high-level of the application, when we treat it as a complete blackbox not knowing how its internals work, we expose some APIs so that we can communicate with it. APIs, just like functions, methods or variables, should have a name well describing what they do and ideally they should do just one thing and do it well. They should always be designed with extensibility in mind as backward-incompatible changes would require migrating all the clients to different APIs which usually takes much longer than anticipated. For that reason, you may see APIs that don't really need any parameters accepting empty objects. This is because if we started with no parameters at all, adding a new one would be a breaking change. Starting with an empty object allows us to add a non-required parameter in the future.</p>
+<h3>Language ecosystem</h3>
+<p>Every mature language comes with an ecosystem - build system, dependency resolution, package manager, bundler, etc... It's one thing to understand the language's syntax and another to know its ecosystem. Both are extremely important when the goal is to become a good engineer though.</p>
+<h3>Conclusion</h3>
+<p>Writing code may seem boring but if you are like me and many others, it's exciting and there are endless opportunities to explore and master at every level of detail. Everything above takes years of practice, from squeezing a hot loop to shaping an API that clients will live with for a decade. Exposure to these challenges is what turns it into real understanding and no bootcamp can really prepare for this. Learning the language syntax may take just a couple weeks but turning that into intuition requires doing and failing.</p>
+<p>This is exactly where AI, as it stands today, falls short. It's remarkably good at producing code but it's up to the engineer to actually decide where a level of indirection via abstraction is needed or where certain patterns should be used. AI still lacks the bigger picture, the mental model of the system, its history and where it's heading. Without that model it can't reliably tell what trade-offs to make. That's why investing time in the above and taking time to understand it is not a waste of time or hobby thing to do, as many authors and companies tend to claim. Quite the opposite, it's a real must and the good news is that AI, if used well, can actually help with that!</p>
+
+
+        </main>
+        <div class="footer">
+    <p>Built with <a href="https://www.11ty.dev">Eleventy</a></p>
+    <a href="https://github.com/libka-b" target="_blank">
+        <img src="/images/about/github-mark.png" class="github-logo">
+    </a>
+    <a href="mailto:lbakajsa@gmail.com">Contact Me</a>
+</div>
+
+    </body>
+</html>
