@@ -1,6 +1,6 @@
 ## Development with Eleventy
 
-Blog can be found at https://libka-b.github.io/
+Blog can be found at https://libka.dev/ and https://libka-b.github.io/
 
 ### Develop locally
 
